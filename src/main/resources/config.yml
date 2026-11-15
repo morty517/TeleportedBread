@@ -1,0 +1,261 @@
+# ===== TeleportedBread 2.0 by morty517 🍞 =====
+# При каждом телепорте КАЖДЫЙ кусок хлеба в инвентаре роллит шанс мутировать в одну из веток
+# (максимум один шаг за один телепорт). После правок: /tbread reload, дерево глянуть: /tbread tree
+
+enabled: true
+triggers:
+  commands: true   # команды из списка commands внизу
+  portals: true    # порталы в ад, в энд и энд-гейтвеи
+
+# Сообщение в actionbar, если что-то мутировало (пусто = без сообщения)
+mutation-message: "&5&oЧто-то в инвентаре странно зашевелилось..."
+# Сообщение заражённому игроку. %bread% = название хлеба
+contagion-message: "&7Тебя заразили: %bread%"
+
+# ---------------------------------------------------------------------------
+# КАК УСТРОЕН ХЛЕБ
+#
+# start — во что может превратиться ОБЫЧНЫЙ хлеб и с каким шансом (%)
+# breads.<id>.next — во что может превратиться этот хлеб дальше
+#   Шансы веток складываются: { a: 5, b: 3 } = 5% стать a, 3% стать b, 92% ничего
+#   Нет next = финальная стадия
+#
+# name / lore / glint — как выглядит предмет
+# model — ванильная модель (none = обычный хлеб), например "minecraft:slime_ball"
+# effects — "эффект уровень секунды", названия как в /effect
+#
+# on-eat — доп. приколы при поедании (каждый блок необязательный):
+#   particles:  аура частиц вокруг игрока
+#     type (portal, heart, dust, reverse_portal, witch, ...), count, spread, duration-seconds
+#     color: "#RRGGBB" и size — только для dust
+#   explosion:  шанс взорваться
+#     chance (%), power (крипер = 3, тнт = 4), delay-seconds, break-blocks, fire
+#     self-damage — true = тот, кто съел, тоже получает урон (false = бессмертный камикадзе)
+#   contagion:  зараза через удары
+#     duration-seconds — сколько ты заразный после поедания
+#     chance (%) — шанс заразить за один удар
+#     effects — что передаётся (пусто = эффекты самого хлеба)
+#     transfer — true = у тебя эти эффекты пропадают (передал другому)
+#     spreads — true = заражённый игрок тоже становится заразным
+#     mobs — true = заражать и мобов, не только игроков
+#
+# legacy-stage — номер стадии из старой версии плагина, чтобы старый хлеб в инвентарях не потерялся
+# ---------------------------------------------------------------------------
+
+start:
+  teleported: 50
+
+breads:
+
+  # ── Обычный хлеб
+  # └ Телепортированный хлеб
+  teleported:
+    legacy-stage: 1
+    name: "&dТелепортированный хлеб"
+    lore:
+      - "&7Слегка покалывает пальцы"
+    model: none
+    glint: true
+    effects:
+      - "speed 1 120"
+      - "weakness 1 45"
+    next:
+      mutated: 7
+      altered: 5
+
+  # ── ветка МУТАЦИИ ─────────────────────────────────────────────
+
+  mutated:
+    legacy-stage: 2
+    name: "&5Мутировавший хлеб"
+    lore:
+      - "&7Кажется, он дышит"
+    model: none
+    glint: true
+    effects:
+      - "strength 2 90"
+      - "slowness 1 60"
+      - "blindness 1 2"
+    next:
+      substance: 3
+      radioactive: 1
+
+  radioactive:
+    name: "&aРадиоактивный хлеб"
+    lore:
+      - "&7Тихонько щёлкает, если поднести дозиметр"
+    model: none
+    glint: true
+    effects:
+      - "poison 1 15"
+      - "glowing 1 60"
+    on-eat:
+      particles:
+        type: dust
+        color: "#7CFC00"
+        size: 1.2
+        count: 6
+        spread: 0.5
+        duration-seconds: 30
+      explosion:
+        chance: 2
+        power: 1.5
+        delay-seconds: 2
+        break-blocks: false
+        fire: false
+        self-damage: true
+      contagion:
+        duration-seconds: 90
+        chance: 25
+        effects:
+          - "poison 1 8"
+          - "glowing 1 30"
+        transfer: false
+        spreads: true
+        mobs: false
+
+  substance:
+    legacy-stage: 3
+    name: "&2Хлебная субстанция"
+    lore:
+      - "&7Агрегатное состояние: неизвестно"
+    model: none
+    glint: true
+    effects:
+      - "mining_fatigue 2 90"
+      - "regeneration 1 105"
+      - "nausea 1 15"
+    next:
+      question: 0.1
+
+  question:
+    legacy-stage: 4
+    name: "&8Хлеб?"
+    lore:
+      - "&7Это... хлеб?"
+      - "&8Никто не уверен."
+    model: none
+    glint: true
+    effects:
+      - "poison 1 10"
+      - "invisibility 1 165"
+      - "glowing 1 180"
+      - "night_vision 1 180"
+    next:
+      radiation_chunk: 0.05
+
+  radiation_chunk:
+    legacy-stage: 5
+    name: "&4Кусок радиации"
+    lore:
+      - "&7Уже не хлеб..."
+    model: "minecraft:slime_ball"
+    glint: true
+    effects:
+      - "blindness 1 2"
+      - "levitation 2 3"
+      - "nausea 124 10"
+      - "hunger 1 30"
+    on-eat:
+      particles:
+        type: dust
+        color: "#3BFF3B"
+        count: 10
+        spread: 0.6
+        duration-seconds: 20
+      explosion:
+        chance: 10
+        power: 2
+        delay-seconds: 1.5
+        break-blocks: false
+        fire: false
+        self-damage: true
+    next:
+      antimatter: 0.05
+
+  antimatter:
+    legacy-stage: 6
+    name: "&3Антиматериальная жижа"
+    lore:
+      - "&b"
+    model: "minecraft:gray_dye"
+    glint: true
+    effects: []
+    on-eat:
+      particles:
+        type: reverse_portal
+        count: 20
+        spread: 0.7
+        duration-seconds: 20
+      explosion:
+        chance: 50
+        power: 3
+        delay-seconds: 3
+        break-blocks: false
+        fire: false
+        self-damage: true
+
+  # ── ветка ИЗМЕНЕНИЯ ───────────────────────────────────────────
+
+  altered:
+    name: "&eИзменённый хлеб"
+    lore:
+      - "&7Вроде такой же, но что-то не так"
+    model: none
+    glint: true
+    effects:
+      - "luck 1 120"
+      - "hunger 1 20"
+    next:
+      gmo: 3
+      pinkish: 3
+
+  gmo:
+    name: "&6Генно-изменённый хлеб"
+    lore:
+      - "&7Без ГМО (это ложь)"
+    model: none
+    glint: true
+    effects:
+      - "health_boost 2 120"
+      - "jump_boost 2 60"
+      - "hunger 2 60"
+    on-eat:
+      contagion:
+        duration-seconds: 60
+        chance: 30
+        effects:
+          - "jump_boost 3 20"
+        transfer: false
+        spreads: false
+        mobs: true
+
+  pinkish:
+    name: "&dРозоватый хлеб"
+    lore:
+      - "&7Пахнет клубничкой. Почему?"
+    model: none
+    glint: true
+    effects:
+      - "regeneration 1 30"
+      - "slow_falling 1 60"
+    on-eat:
+      particles:
+        type: heart
+        count: 1
+        spread: 0.4
+        duration-seconds: 20
+      contagion:
+        duration-seconds: 60
+        chance: 50
+        effects:
+          - "regeneration 1 10"
+        transfer: false
+        spreads: true
+        mobs: true
+
+# Какие команды считаются телепортом (для triggers.commands)
+commands: [warp, ewarp, home, ehome, homes, spawn, espawn]
+
+# Сколько секунд команда "ждёт" телепорта (если у Essentials включён warmup — ставь больше warmup'а)
+command-timeout-seconds: 15

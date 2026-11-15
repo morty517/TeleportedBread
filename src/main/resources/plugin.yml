@@ -1,0 +1,15 @@
+name: TeleportedBread
+version: ${project.version}
+main: dev.morty.teleportedbread.TeleportedBread
+api-version: '1.21'
+author: morty517
+website: https://github.com/morty517/TeleportedBread
+description: Хлеб мутирует при телепортации. Брандл одобряет.
+commands:
+  tbread:
+    description: Управление TeleportedBread
+    usage: /tbread [gui] | /tbread reload | /tbread tree | /tbread give <id> [кол-во]
+    permission: tbread.admin
+permissions:
+  tbread.admin:
+    default: op
